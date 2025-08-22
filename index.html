@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Lightweight, single‑file novel reading site inspired by ReadNovelFull. Search, browse, and read sample chapters.">
+  <title>NovelShelf — Read Online</title>
+  <style>
+    /* ========== CSS VARIABLES & RESET ========== */
+    :root{
+      --bg: #0b0e13;            /* dark page background */
+      --panel: #121721;         /* card & header bg */
+      --muted: #9aa4b2;         /* secondary text */
+      --text: #e8eef5;          /* primary text */
+      --brand: #6aa6ff;         /* accent */
+      --brand-2: #8ef;          /* accent 2 */
+      --good: #3ecf8e;          /* success */
+      --warn: #ffcc66;          /* warning */
+      --danger:#ff6b6b;         /* danger */
+      --chip:#1b2130;           /* tag chip */
+      --ring:#2b3447;           /* outlines */
+      --shadow: 0 10px 25px rgba(0,0,0,.35);
+    }
+    *{ box-sizing: border-box; }
+    html, body{ height:100%; }
+    body{
+      margin:0; font: 500 16px/1.55 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; 
+      color:var(--text); background: linear-gradient(180deg, #0b0e13 0%, #0e131c 60%, #0b0e13 100%);
+      letter-spacing:.2px; -webkit-font-smoothing:antialiased;
+    }
+    a{ color:inherit; text-decoration:none }
+    img{ display:block; max-width:100% }
+    .container{ width:min(1200px, 92%); margin-inline:auto; }
+    
+    /* ========== HEADER ========== */
+    header{
+      position:sticky; top:0; z-index:50; box-shadow: var(--shadow);
+      background: linear-gradient(90deg, #0e141f, #0c111a);
+      border-bottom:1px solid var(--ring);
+    }
+    .bar{ display:flex; align-items:center; gap:14px; padding:12px 0; }
+    .logo{ display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.3px; }
+    .logo .mark{ width:28px; height:28px; border-radius:8px; background: conic-gradient(from 210deg, #3478f6, #6aa6ff, #00d4ff, #6aa6ff 75%); box-shadow: 0 0 0 2px #233047 inset }
+    .logo b{ color:#cfe2ff }
+
+    nav{ margin-left:auto; display:flex; align-items:center; gap:10px; }
+    nav a{ padding:8px 12px; border-radius:10px; color:var(--muted); transition:.2s ease; border:1px solid transparent }
+    nav a:hover{ color:var(--text); background: #121826; border-color: var(--ring) }
+
+    .search{ flex: 1 1 420px; display:flex; align-items:center; gap:8px; background:var(--panel); border:1px solid var(--ring); border-radius:12px; padding:8px 10px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.02) }
+    .search input{ all:unset; flex:1; padding:6px 4px; color:var(--text) }
+    .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; border-radius:12px; background:#162033; color:#cfe2ff; border:1px solid var(--ring); cursor:pointer; transition:.15s ease; }
+    .btn:hover{ filter:brightness(1.1) }
+
+    /* ========== HERO ========== */
+    .hero{ padding:34px 0 10px; }
+    .hero .panel{ background:radial-gradient(1200px 420px at 10% -10%, #1b2a44, transparent 60%), linear-gradient(180deg, #121722, #0e131c); border:1px solid var(--ring); border-radius:18px; padding:26px; display:grid; grid-template-columns: 1.3fr 1fr; gap:20px; }
+    .hero h1{ margin:0; font-size: clamp(26px, 2.3vw + 12px, 44px); line-height:1.15 }
+    .hero p{ color: var(--muted); margin:10px 0 18px }
+    .pills{ display:flex; flex-wrap:wrap; gap:8px }
+    .pill{ background:var(--chip); border:1px solid var(--ring); color:#c8d6e5; padding:8px 12px; border-radius:99px; font-size:14px; cursor:pointer }
+
+    /* ========== GRID (CARDS) ========== */
+    .section{ padding:24px 0 }
+    .section h2{ margin:0 0 14px; font-size:22px }
+
+    .grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:16px }
+    .card{ background:var(--panel); border:1px solid var(--ring); border-radius:16px; overflow:hidden; box-shadow: var(--shadow); display:flex; flex-direction:column }
+    .cover{ position:relative; aspect-ratio: 2/3; background: linear-gradient(160deg, #1c2741, #0f1726 60%); display:flex; align-items:flex-end; justify-content:flex-start; padding:10px }
+    .cover::after{ content:""; position:absolute; inset:0; box-shadow: inset 0 -120px 120px rgba(0,0,0,.35); }
+    .badge{ position:absolute; top:10px; left:10px; background:rgba(255,255,255,.08); border:1px solid var(--ring); padding:6px 9px; border-radius:999px; font-size:12px }
+    .star{ position:absolute; top:10px; right:10px; background:rgba(255,210,96,.12); border:1px solid #3a2a09; color:#ffd47c; padding:6px 9px; border-radius:999px; font-size:12px }
+    .title{ font-weight:700; font-size:15px; padding:12px 12px 4px }
+    .meta{ padding:0 12px 12px; color:var(--muted); font-size:13px; display:flex; justify-content:space-between; gap:8px; align-items:center }
+    .chips{ display:flex; gap:6px; padding:0 12px 12px; flex-wrap:wrap }
+    .chip{ font-size:12px; padding:5px 8px; border-radius:999px; background:var(--chip); border:1px solid var(--ring); color:#c8d6e5 }
+    .card .actions{ margin-top:auto; display:flex; gap:8px; padding:12px }
+    .card .actions .btn{ flex:1 }
+
+    /* ========== LATEST LIST ========== */
+    .list{ display:grid; gap:8px }
+    .row{ display:grid; grid-template-columns: 1.2fr .9fr .5fr .5fr auto; gap:10px; padding:10px 12px; background:var(--panel); border:1px solid var(--ring); border-radius:12px; align-items:center }
+    .row h4{ margin:0; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+    .row span{ color:var(--muted); font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+
+    /* ========== DETAIL PAGE ========== */
+    .hidden{ display:none !important }
+    .detail{ display:grid; grid-template-columns: 260px 1fr; gap:22px; background:var(--panel); border:1px solid var(--ring); border-radius:18px; padding:18px; box-shadow:var(--shadow) }
+    .detail .bigcover{ aspect-ratio:2/3; border-radius:12px; overflow:hidden; background:linear-gradient(160deg, #1c2741, #0f1726 60%); border:1px solid var(--ring); }
+    .detail .info h2{ margin:0 0 4px }
+    .statline{ display:flex; gap:16px; color:#c8d6e5; font-size:14px }
+    .statline b{ color:#fff }
+    .desc{ color:#d1d6df; margin:12px 0 12px }
+    .stack{ display:flex; flex-wrap:wrap; gap:10px; margin:6px 0 }
+    .chapters{ margin-top:10px; display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap:10px; max-height:320px; overflow:auto; padding-right:4px }
+    .chapters a{ background:#0f1626; border:1px solid var(--ring); padding:10px 12px; border-radius:10px; color:#dce6f5 }
+
+    /* ========== READER ========== */
+    .reader{ background:var(--panel); border:1px solid var(--ring); border-radius:18px; padding:16px; box-shadow:var(--shadow); }
+    .reader .toolbar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; border-bottom:1px dashed var(--ring); padding-bottom:10px; margin-bottom:12px }
+    .reader .toolbar .group{ display:flex; gap:8px; align-items:center }
+    .reader article{ max-width:70ch; margin-inline:auto; font-size:1.05rem; line-height:1.8; color:#e9eef7 }
+    .reader h2{ text-align:center; margin:10px 0 18px }
+
+    /* ========== FOOTER ========== */
+    footer{ color:var(--muted); border-top:1px solid var(--ring); margin-top:30px; padding:18px 0 40px }
+
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 920px){
+      .hero .panel{ grid-template-columns: 1fr; }
+      .detail{ grid-template-columns: 1fr; }
+      nav{ display:none }
+    }
+  </style>
+</head>
+<body>
+  <!-- ===== HEADER ===== -->
+  <header>
+    <div class="container bar" role="navigation" aria-label="Main">
+      <a href="#home" class="logo" aria-label="NovelShelf Home" data-link>
+        <span class="mark" aria-hidden="true"></span>
+        <span>Novel<b>Shelf</b></span>
+      </a>
+      <label class="search" aria-label="Search novels">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm9.5 1.5-4.35-4.35" stroke="#9aa4b2" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="search" placeholder="Search title or author…" />
+        <button class="btn" id="clearSearch" title="Clear search">Clear</button>
+      </label>
+      <nav>
+        <a href="#home" data-link>Popular</a>
+        <a href="#home" data-link>Latest</a>
+        <a href="#home" data-link>Genres</a>
+        <a href="#home" data-link>Rankings</a>
+      </nav>
+      <button class="btn" id="toggleTheme" title="Toggle theme">🌙</button>
+    </div>
+  </header>
+
+  <!-- ===== MAIN ===== -->
+  <main class="container" id="app">
+    <!-- HERO / CATEGORIES -->
+    <section id="home" class="section">
+      <div class="hero">
+        <div class="panel">
+          <div>
+            <h1>Read serialized web novels — free & lightweight</h1>
+            <p>Browse trending titles, track your progress, and jump back in where you left off. This demo ships with a few sample novels and chapters.</p>
+            <div class="pills" id="genrePills" aria-label="Filter by genre"></div>
+          </div>
+          <div>
+            <div class="reader" style="padding:16px">
+              <div class="toolbar"><strong>Quick Tips</strong></div>
+              <ul style="margin:0 0 6px 20px; color:#c8d6e5">
+                <li>Use the search box to filter.</li>
+                <li>Click a card title to open details.</li>
+                <li>Hit <em>Start Reading</em> to open the reader. Progress is saved.</li>
+              </ul>
+              <p style="color:#9aa4b2; margin:8px 0 0">This demo is <em>inspired</em> by ReadNovelFull’s layout. No content or assets are copied.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GRID: POPULAR -->
+      <div class="section">
+        <h2>Top Trending</h2>
+        <div id="grid" class="grid" role="list"></div>
+      </div>
+
+      <!-- LATEST UPDATES LIST -->
+      <div class="section">
+        <h2>Latest Updates</h2>
+        <div id="latest" class="list" role="list"></div>
+      </div>
+    </section>
+
+    <!-- DETAIL PAGE -->
+    <section id="detail" class="section hidden" aria-live="polite"></section>
+
+    <!-- READER PAGE -->
+    <section id="reader" class="section hidden"></section>
+  </main>
+
+  <footer class="container">
+    © <span id="year"></span> NovelShelf · <span style="color:#cfe2ff">Demo</span> made with vanilla HTML/CSS/JS.
+  </footer>
+
+  <script>
+    // ====================== DATA =======================
+    const NOVELS = [
+      {
+        id: 'echo-shard-labyrinth',
+        title: 'Echo Shard Labyrinth',
+        author: 'T. K. Arden',
+        status: 'Ongoing',
+        rating: 4.7,
+        tags: ['Fantasy','Dungeon','System'],
+        color: '#7aa2ff',
+        blurb: 'A curious tinkerer is thrown into a living maze where every room remembers you. Insight, not brute force, is the only way forward.',
+        chapters: [
+          { id: 'c1', title: 'Chapter 1 — A Door That Remembers', text: `The door was perfectly smooth, except where it remembered fingers. In the cold light, those indentations lifted like whispers, showing who had pressed here before. I placed my palm where the memory fit. The maze sighed, and the passage rearranged with the hush of turning pages.` },
+          { id: 'c2', title: 'Chapter 2 — Mimicry', text: `Patterns have moods. Copy the rhythm of a hunter's steps and the corridor will think you're something else. I tested it—weight, pace, breath. The wall smiled open like a curtain.` },
+          { id: 'c3', title: 'Chapter 3 — The First Thread', text: `At the junction, a marker hung in the air—thin as silk, bright as dawn. Curiosity tightened around my wrist. Follow me, it seemed to say, if you can stand not knowing.` },
+        ]
+      },
+      {
+        id: 'steam-and-sigil',
+        title: 'Steam & Sigil',
+        author: 'R. Vale',
+        status: 'Completed',
+        rating: 4.5,
+        tags: ['Steampunk','Adventure','Alchemy'],
+        color: '#f5a97f',
+        blurb: 'A runaway alchemist and a polite automaton chase a stolen sky-engine across empires and etiquette.',
+        chapters: [
+          { id: 'c1', title: 'Chapter 1 — Borrowed Wings', text: `We did not steal the engine. We borrowed it from a man who had borrowed it from the sun. Semantics, yes, but words are weight in the courts, and skyships are light when you cut the right ropes.` },
+          { id: 'c2', title: 'Chapter 2 — Tea with a Bomb', text: `The automaton poured without spilling. "Is it armed?" I asked. "Yes," they said. "Both the bomb and I."` },
+        ]
+      },
+      {
+        id: 'library-of-falling-stars',
+        title: 'Library of Falling Stars',
+        author: 'N. Ishaan',
+        status: 'Ongoing',
+        rating: 4.8,
+        tags: ['Mystery','Urban Fantasy','Slow Burn'],
+        color: '#a6da95',
+        blurb: 'Every shooting star is a book that slipped. A sleepy librarian picks them up before wishes break.',
+        chapters: [
+          { id: 'c1', title: 'Chapter 1 — Due Tonight', text: `Two stars fell into the river and came up as hardcovers. People made wishes; I wrote fines. The city liked its magic tidy.` },
+          { id: 'c2', title: 'Chapter 2 — The Redacted Constellation', text: `Someone had censored the sky with a thick marker. I climbed the clocktower to read between the black bars.` },
+          { id: 'c3', title: 'Chapter 3 — Quiet Hours', text: `After midnight, even the ghosts whisper. I stamped the date, and the room exhaled dust and relief.` },
+          { id: 'c4', title: 'Chapter 4 — Interlibrary Loan', text: `The request slip was signed by a place that didn't exist. I checked the map. It started checking me back.` },
+        ]
+      },
+      {
+        id: 'circuit-queen',
+        title: 'Circuit Queen',
+        author: 'I. Zhao',
+        status: 'Hiatus',
+        rating: 4.2,
+        tags: ['Sci‑Fi','AI','Cyberpunk'],
+        color: '#c6a0f6',
+        blurb: 'A street chess prodigy trains a rogue city AI to play nicer than its creators did.',
+        chapters: [
+          { id: 'c1', title: 'Chapter 1 — Gambit', text: `We traded moves under neon rain. The city AI watched from a puddle, reflecting wrong on purpose.` }
+        ]
+      }
+    ];
+
+    const GENRES = [...new Set(NOVELS.flatMap(n => n.tags))];
+
+    // ====================== HELPERS =======================
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
+    const byId = id => NOVELS.find(n => n.id === id);
+    const saveProgress = (id, idx) => localStorage.setItem(`progress:${id}`, String(idx));
+    const getProgress = (id) => Number(localStorage.getItem(`progress:${id}`) || 0);
+
+    const coverStyle = (c) => `background:linear-gradient(160deg, ${shade(c, -12)}, #0f1726 65%);`;
+    function shade(hex, pct){
+      // Quick hex shade helper (approx.)
+      const f = parseInt(hex.replace('#',''),16), t = pct<0?0:255, p = Math.abs(pct)/100;
+      const R = f>>16, G = f>>8&0x00FF, B = f&0x0000FF;
+      return `#${(0x1000000 + (Math.round((t-R)*p)+R)*0x10000 + (Math.round((t-G)*p)+G)*0x100 + (Math.round((t-B)*p)+B)).toString(16).slice(1)}`;
+    }
+
+    // ====================== RENDER: HERO FILTERS =======================
+    function renderGenrePills(){
+      const box = $('#genrePills');
+      box.innerHTML = '<button class="pill" data-genre="All">All</button>' +
+        GENRES.map(g => `<button class="pill" data-genre="${g}">${g}</button>`).join('');
+      box.addEventListener('click', e => {
+        const btn = e.target.closest('.pill'); if(!btn) return;
+        const g = btn.dataset.genre; $('#search').value = '';
+        currentGenre = g === 'All' ? '' : g; renderGrid();
+        // Scroll to grid when filtering
+        document.getElementById('grid').scrollIntoView({behavior:'smooth', block:'start'});
+      });
+    }
+
+    // ====================== RENDER: GRID =======================
+    let currentGenre = '';
+    function renderGrid(){
+      const q = $('#search').value.trim().toLowerCase();
+      const items = NOVELS.filter(n => (
+        (!currentGenre || n.tags.includes(currentGenre)) &&
+        (!q || n.title.toLowerCase().includes(q) || n.author.toLowerCase().includes(q))
+      ));
+      const html = items.map(n => `
+        <article class="card" role="listitem">
+          <div class="cover" style="${coverStyle(n.color)}">
+            <span class="badge">${n.status}</span>
+            <span class="star">★ ${n.rating.toFixed(1)}</span>
+          </div>
+          <a href="#detail/${n.id}" data-open="${n.id}" class="title" title="Open ${n.title}">${n.title}</a>
+          <div class="meta">
+            <span>${n.author}</span>
+            <small>${n.chapters.length} ch</small>
+          </div>
+          <div class="chips">${n.tags.map(t=>`<span class="chip">${t}</span>`).join('')}</div>
+          <div class="actions">
+            <button class="btn" data-open="${n.id}">Details</button>
+            <button class="btn" data-read="${n.id}">Start Reading</button>
+          </div>
+        </article>
+      `).join('');
+      const el = $('#grid'); el.innerHTML = html || '<p style="color:var(--muted)">No results. Try another search.</p>';
+    }
+
+    // ====================== RENDER: LATEST =======================
+    function renderLatest(){
+      const rows = NOVELS.flatMap(n => n.chapters.map((c, i) => ({ novel:n, chapter:c, idx:i })))
+        .sort((a,b) => b.chapter.id.localeCompare(a.chapter.id)) // naive ordering for demo
+        .slice(0, 8)
+        .map(({novel, chapter, idx}) => `
+          <div class="row" role="listitem">
+            <h4><a href="#reader/${novel.id}/${idx}">${novel.title}</a></h4>
+            <span>${chapter.title}</span>
+            <span>${novel.author}</span>
+            <span>${novel.tags[0]}</span>
+            <a class="btn" href="#reader/${novel.id}/${idx}">Read</a>
+          </div>`).join('');
+      $('#latest').innerHTML = rows;
+    }
+
+    // ====================== DETAIL PAGE =======================
+    function showDetail(id){
+      const n = byId(id); if(!n) return;
+      $('#home').classList.add('hidden');
+      $('#reader').classList.add('hidden');
+      const startIdx = getProgress(n.id);
+      const chips = n.tags.map(t=>`<span class="chip">${t}</span>`).join('');
+      const ch = n.chapters.map((c,i)=>`<a href="#reader/${n.id}/${i}">${c.title}</a>`).join('');
+      $('#detail').innerHTML = `
+        <div class="detail">
+          <div>
+            <div class="bigcover" style="${coverStyle(n.color)}"></div>
+          </div>
+          <div class="info">
+            <h2>${n.title}</h2>
+            <div class="statline">
+              <span>Author: <b>${n.author}</b></span>
+              <span>Status: <b>${n.status}</b></span>
+              <span>Rating: <b>★ ${n.rating.toFixed(1)}</b></span>
+              <span>Chapters: <b>${n.chapters.length}</b></span>
+            </div>
+            <div class="stack">${chips}</div>
+            <p class="desc">${n.blurb}</p>
+            <div class="stack">
+              <a class="btn" href="#reader/${n.id}/${startIdx}">Continue Reading</a>
+              <a class="btn" href="#reader/${n.id}/0">Start from Chapter 1</a>
+              <a class="btn" href="#home">Back</a>
+            </div>
+            <h3 style="margin:14px 0 8px">Chapters</h3>
+            <div class="chapters">${ch}</div>
+          </div>
+        </div>`;
+      $('#detail').classList.remove('hidden');
+      scrollToTop();
+    }
+
+    // ====================== READER =======================
+    let current = { novel:null, idx:0 };
+    function showReader(id, idx=0){
+      const n = byId(id); if(!n) return;
+      idx = Math.max(0, Math.min(idx, n.chapters.length-1));
+      current = { novel:n, idx };
+      const c = n.chapters[idx];
+      $('#home').classList.add('hidden');
+      $('#detail').classList.add('hidden');
+
+      $('#reader').innerHTML = `
+        <div class="reader">
+          <div class="toolbar">
+            <div class="group" aria-label="Breadcrumbs">
+              <a class="btn" href="#detail/${n.id}">← ${n.title}</a>
+              <strong style="opacity:.8">${c.title}</strong>
+            </div>
+            <div class="group">
+              <button class="btn" id="decFont" title="Smaller text">A−</button>
+              <button class="btn" id="incFont" title="Larger text">A+</button>
+              <button class="btn" id="prevCh">Prev</button>
+              <button class="btn" id="nextCh">Next</button>
+            </div>
+          </div>
+          <article>
+            <h2>${c.title}</h2>
+            <div id="chapterText">${c.text.replace(/\n/g,'<br>')}</div>
+          </article>
+        </div>`;
+      $('#reader').classList.remove('hidden');
+      saveProgress(n.id, idx);
+      scrollToTop();
+      bindReaderControls();
+    }
+
+    function bindReaderControls(){
+      const art = document.querySelector('.reader article');
+      $('#incFont').onclick = () => { art.style.fontSize = (parseFloat(getComputedStyle(art).fontSize) + 1) + 'px'; };
+      $('#decFont').onclick = () => { art.style.fontSize = (parseFloat(getComputedStyle(art).fontSize) - 1) + 'px'; };
+      $('#prevCh').onclick = () => navigateChapter(-1);
+      $('#nextCh').onclick = () => navigateChapter(1);
+      document.addEventListener('keydown', readerKeys);
+    }
+
+    function readerKeys(e){
+      if($('#reader').classList.contains('hidden')) return;
+      if(e.key === 'ArrowLeft') navigateChapter(-1);
+      if(e.key === 'ArrowRight') navigateChapter(1);
+    }
+
+    function navigateChapter(delta){
+      const {novel, idx} = current; const next = Math.min(Math.max(idx + delta, 0), novel.chapters.length-1);
+      if(next === idx) return; location.hash = `#reader/${novel.id}/${next}`; // triggers router
+    }
+
+    // ====================== ROUTER =======================
+    function router(){
+      const hash = decodeURIComponent(location.hash || '#home');
+      const [path, a, b] = hash.split('/');
+      if(path === '#home'){ showHome(); return; }
+      if(path === '#detail' && a){ showDetail(a); return; }
+      if(path === '#reader' && a){ showReader(a, Number(b||0)); return; }
+      showHome();
+    }
+
+    function showHome(){
+      $('#detail').classList.add('hidden');
+      $('#reader').classList.add('hidden');
+      $('#home').classList.remove('hidden');
+      scrollToTop();
+    }
+
+    function scrollToTop(){ window.scrollTo({top:0, behavior:'smooth'}); }
+
+    // ====================== SEARCH & EVENTS =======================
+    $('#search').addEventListener('input', () => { currentGenre=''; renderGrid(); });
+    $('#clearSearch').addEventListener('click', () => { $('#search').value=''; currentGenre=''; renderGrid(); });
+
+    // Delegate clicks for Detail/Read
+    document.addEventListener('click', (e) => {
+      const openBtn = e.target.closest('[data-open]');
+      if(openBtn){ e.preventDefault(); location.hash = `#detail/${openBtn.dataset.open}`; }
+      const readBtn = e.target.closest('[data-read]');
+      if(readBtn){ e.preventDefault(); const id = readBtn.dataset.read; location.hash = `#reader/${id}/${getProgress(id)}`; }
+    });
+
+    // Theme toggle
+    const THEME_KEY = 'novelshelf:dark';
+    const setTheme = (isDark) => { document.documentElement.classList.toggle('dark', isDark); document.body.style.background = isDark ? 'linear-gradient(180deg, #0b0e13, #0e131c)' : 'linear-gradient(180deg, #f6f8fb, #eef3ff)'; };
+    $('#toggleTheme').addEventListener('click', () => { const v = localStorage.getItem(THEME_KEY) !== '1'; localStorage.setItem(THEME_KEY, v? '1':'0'); setTheme(v); });
+    setTheme(localStorage.getItem(THEME_KEY) === '1');
+
+    // ====================== INIT =======================
+    function init(){
+      renderGenrePills();
+      renderGrid();
+      renderLatest();
+      $('#year').textContent = new Date().getFullYear();
+      window.addEventListener('hashchange', router);
+      router();
+    }
+
+    init();
+  </script>
+</body>
+</html>
